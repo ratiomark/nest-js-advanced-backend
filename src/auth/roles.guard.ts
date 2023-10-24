@@ -3,6 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Observable } from "rxjs";
 import { ROLES_KEY } from "./roles-auth.decorator";
+import { User } from "src/users/users.model";
 
 // Injectable - декоратор, который позволяет внедрять зависимости в класс
 @Injectable()
@@ -17,7 +18,13 @@ export class RolesGuard implements CanActivate {
 	) { }
 
 	canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-		const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [])
+		const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+			context.getHandler(),
+			context.getClass()
+		])
+		if (!requiredRoles) {
+			return true
+		}
 		// получаем доступ к объекту запроса
 		const req = context.switchToHttp().getRequest()
 		try {
@@ -29,13 +36,11 @@ export class RolesGuard implements CanActivate {
 				throw new UnauthorizedException({ message: 'Пользователь не авторизован' })
 			}
 
-			console.log('1')
-			const user = this.jwtService.verify(token)
-			console.log('2')
+			const user = this.jwtService.verify(token) as User
 			req.user = user
-			return true
+			// если роль пользователя есть в массиве ролей, которые требуются в конкретном случае, то возвращаем true
+			return user.roles.some(role => requiredRoles.includes(role.value))
 		} catch (e) {
-			console.log('!!!!!!!!!!!!!!!!!!!')
 			throw new UnauthorizedException({ message: 'Пользователь не авторизован' })
 		}
 	}

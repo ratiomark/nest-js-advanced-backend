@@ -4,4 +4,4 @@ import { SetMetadata } from "@nestjs/common";
 export const ROLES_KEY = 'roles';
 
 // декоратор для присвоения роли, но это просто хелпер для прокидывания роли
-export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+export const RolesDecorator = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
